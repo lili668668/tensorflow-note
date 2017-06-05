@@ -40,6 +40,7 @@ for step in range(2017):
     sess.run(train, feed_dict={xs: xd, ys: yd})
     if step % 20 == 0:
         result = sess.run(merged, feed_dict={xs: xd, ys: yd})
+        writer.add_summary(result, step)
         print step, sess.run(Weights), sess.run(biases)
 feed_dict = {xs: [10, 20, 40]}
 prediction = sess.run(y, feed_dict)
