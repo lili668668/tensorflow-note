@@ -1,2 +1,1 @@
-python trytfb.py
-tensorboard --logdir='logs/'
+tensorboard --logdir='logs/' --port=8080
