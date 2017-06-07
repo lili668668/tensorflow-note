@@ -29,23 +29,44 @@ with tf.name_scope('train'):
     train = optimizer.minimize(loss)
 
 init = tf.initialize_all_variables()
-builder = tf.saved_model.builder.SavedModelBuilder("gs://learn_talk/demo11/output/")
+builder = tf.saved_model.builder.SavedModelBuilder("gs://learn_talk/demo16/output/")
 
 # run the tensorflow
 with tf.Session() as sess:
     merged = tf.summary.merge_all()
     writer = tf.summary.FileWriter("logs/", sess.graph)
     sess.run(init)
-    builder.add_meta_graph_and_variables(sess, ["init", "serve"])
 
     for step in range(2017):
         sess.run(train, feed_dict={xs: xd, ys: yd})
         if step % 20 == 0:
             result = sess.run(merged, feed_dict={xs: xd, ys: yd})
             writer.add_summary(result, step)
-            builder.add_meta_graph(["training"])
             print step, sess.run(Weights), sess.run(biases)
     feed_dict = {xs: [10, 20, 40]}
+    baka_map = {
+        "key": "serving_default",
+        "value": {
+            "inputs": {
+                "key": "xs",
+                "value": {
+                    "name": "x_input",
+                    "dtype": tf.float32,
+                    "tensor_shape": tf.TensorShape([None])
+                }
+            },
+            "outputs": {
+                "key": "ys",
+                "value": {
+                    "name": "y_input",
+                    "dtype": tf.float32,
+                    "tensor_shape": tf.TensorShape([None])
+                }
+            },
+            "method_name": "tensorflow/serving/predict"
+        }
+    }
+    builder.add_meta_graph_and_variables(sess, ["serve"], signature_def_map=baka_map)
     prediction = sess.run(y, feed_dict)
     print prediction
 builder.save()
