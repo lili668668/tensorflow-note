@@ -29,20 +29,22 @@ with tf.name_scope('train'):
     train = optimizer.minimize(loss)
 
 init = tf.initialize_all_variables()
+saver = tf.train.Saver()
 
 # run the tensorflow
-sess = tf.Session()
-merged = tf.summary.merge_all()
-writer = tf.summary.FileWriter("logs/", sess.graph)
-sess.run(init)
+with tf.Session() as sess:
+    merged = tf.summary.merge_all()
+    writer = tf.summary.FileWriter("logs/", sess.graph)
+    sess.run(init)
 
-for step in range(2017):
-    sess.run(train, feed_dict={xs: xd, ys: yd})
-    if step % 20 == 0:
-        result = sess.run(merged, feed_dict={xs: xd, ys: yd})
-        writer.add_summary(result, step)
-        print step, sess.run(Weights), sess.run(biases)
-feed_dict = {xs: [10, 20, 40]}
-prediction = sess.run(y, feed_dict)
-print prediction
+    for step in range(2017):
+        sess.run(train, feed_dict={xs: xd, ys: yd})
+        if step % 20 == 0:
+            result = sess.run(merged, feed_dict={xs: xd, ys: yd})
+            writer.add_summary(result, step)
+            print step, sess.run(Weights), sess.run(biases)
+    feed_dict = {xs: [10, 20, 40]}
+    prediction = sess.run(y, feed_dict)
+    print prediction
+    save_path = saver.save(sess, "output/save.ckpt")
 
