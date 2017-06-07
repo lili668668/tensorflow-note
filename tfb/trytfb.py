@@ -8,6 +8,7 @@ yd = xd * 0.1 + 0.3
 with tf.name_scope('inputs'):
     xs = tf.placeholder(tf.float32, name='x_input')
     ys = tf.placeholder(tf.float32, name='y_input')
+    inputs = {'x_input': tf.saved_model.utils.build_tensor_info(xs)}
 
 # make a conputational graph
 with tf.name_scope('layer'):
@@ -20,6 +21,7 @@ with tf.name_scope('layer'):
 
     with tf.name_scope('Wx_add_b'):
         y = Weights * xs + biases
+        outputs = {'y_output': tf.saved_model.utils.build_tensor_info(y)}
 
 with tf.name_scope('loss'):
     loss = tf.reduce_mean(tf.square(y-ys))
@@ -29,7 +31,7 @@ with tf.name_scope('train'):
     train = optimizer.minimize(loss)
 
 init = tf.initialize_all_variables()
-builder = tf.saved_model.builder.SavedModelBuilder("gs://learn_talk/demo16/output/")
+builder = tf.saved_model.builder.SavedModelBuilder("gs://learn_talk/demo17/output/")
 
 # run the tensorflow
 with tf.Session() as sess:
@@ -44,29 +46,8 @@ with tf.Session() as sess:
             writer.add_summary(result, step)
             print step, sess.run(Weights), sess.run(biases)
     feed_dict = {xs: [10, 20, 40]}
-    baka_map = {
-        "key": "serving_default",
-        "value": {
-            "inputs": {
-                "key": "xs",
-                "value": {
-                    "name": "x_input",
-                    "dtype": tf.float32,
-                    "tensor_shape": tf.TensorShape([None])
-                }
-            },
-            "outputs": {
-                "key": "ys",
-                "value": {
-                    "name": "y_input",
-                    "dtype": tf.float32,
-                    "tensor_shape": tf.TensorShape([None])
-                }
-            },
-            "method_name": "tensorflow/serving/predict"
-        }
-    }
-    builder.add_meta_graph_and_variables(sess, ["serve"], signature_def_map=baka_map)
+    signature = tf.saved_model.signature_def_utils.build_signature_def(inputs=inputs, outputs=outputs, method_name='tensorflow/serving/predict')
+    builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.SERVING], signature_def_map={'serving_default': signature})
     prediction = sess.run(y, feed_dict)
     print prediction
 builder.save()
